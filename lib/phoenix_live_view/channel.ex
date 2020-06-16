@@ -230,9 +230,19 @@ defmodule Phoenix.LiveView.Channel do
                 " was not mounted at the router with the live/3 macro under URL #{inspect(url)}"
 
       true ->
-        params
+        measurements = %{system_time: System.system_time()}
+        metadata = %{url: url}
+        :telemetry.execute([:phoenix, :live_view, :handle_params, :start], measurements, metadata)
+        start = System.monotonic_time()
+
+        result = params
         |> view.handle_params(url, socket)
         |> mount_handle_params_result(state, :mount)
+
+        measurements = %{duration: System.monotonic_time() - start}
+        metadata = %{url: url}
+        :telemetry.execute([:phoenix, :live_view, :handle_params, :stop], measurements, metadata)
+        result
     end
   end
 
